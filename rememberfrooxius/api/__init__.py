@@ -6,4 +6,5 @@ from . import (
     sessions,
     stats,
     userSessions,
+    users,
 )

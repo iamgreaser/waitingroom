@@ -18,6 +18,8 @@ from ..base import (
 #
 # POST[U/A]|PUT[U/A], GET[U/A] /api/sessions
 #
+# NOTE: outputDevice: 1 = "Headless", 2 = "Screen", 3 = "VR" - FIXME make an enum for this --GM
+#
 
 
 @dataclass()
