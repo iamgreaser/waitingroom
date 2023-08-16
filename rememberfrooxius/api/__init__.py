@@ -4,5 +4,6 @@ from . import (
     globalvars,
     neosSessions,
     sessions,
+    stats,
     userSessions,
 )

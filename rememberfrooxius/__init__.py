@@ -21,6 +21,41 @@ from . import (
 
 
 #
+# ASSETS:
+#
+
+# These are under "/api".
+ASSET_PATHS = {
+    "/api/groups": [
+        "G-Neos/records/root/Inventory/SpawnObjects/ShortcutTooltips/ShapeTip",  # FIXME: NONFREE ASSET --GM
+        "G-Neos/records/root/Inventory/SpawnObjects/ShortcutTooltips/MaterialTip",  # FIXME: NONFREE ASSET --GM
+        "G-Neos/records/root/Inventory/SpawnObjects/ShortcutTooltips/GlueTip",  # FIXME: NONFREE ASSET --GM
+        "G-Neos/records/root/Inventory/SpawnObjects/ShortcutTooltips/GrabbableSetterTip",  # FIXME: NONFREE ASSET --GM
+        "G-Neos/records/root/Inventory/SpawnObjects/ShortcutTooltips/Microphone",  # FIXME: NONFREE ASSET --GM
+        "G-Neos/records/root/Inventory/SpawnObjects/ShortcutTooltips/CharacterColliderSetterTip",  # FIXME: NONFREE ASSET --GM
+        "G-Neos/records/root/Inventory/SpawnObjects/ShortcutTooltips/DevToolTip",  # FIXME: NONFREE ASSET --GM
+        "G-Neos/records/root/Inventory/SpawnObjects/ShortcutTooltips/LightTip",  # FIXME: NONFREE ASSET --GM
+        "G-Neos/records/root/Inventory/SpawnObjects/ShortcutTooltips/LogixTip",  # FIXME: NONFREE ASSET --GM
+        "G-Neos/records/root/Inventory/SpawnObjects/ViewVisual",  # FIXME: NONFREE ASSET --GM
+        "G-Neos/records/root/Inventory/SpawnObjects/VR_Glove_Left",  # FIXME: NONFREE ASSET --GM
+        "G-Neos/records/root/Inventory/SpawnObjects/VR_Headset",  # FIXME: NONFREE ASSET --GM
+        "G-Neos/records/root/Inventory/SpawnObjects/VR_Glove_Right",  # FIXME: NONFREE ASSET --GM
+    ]
+}
+for asset_root, asset_list in ASSET_PATHS.items():
+    for asset_name in asset_list:
+
+        def _f0(urlpath: str, localpath: str) -> None:
+            def _f1() -> Response:
+                with app.open_resource(localpath, "rb") as f:
+                    return make_response(f.read(), 200)
+
+            _f1.__name__ = "path$" + urlpath
+            app.route(urlpath)(_f1)
+
+        _f0(asset_root + "/" + asset_name, "cloudbase/" + asset_name)
+
+#
 # TESTING: /
 #
 

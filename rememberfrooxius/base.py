@@ -4,7 +4,12 @@ import datetime
 import json
 import logging
 import math
-from typing import Any
+from typing import (
+    Any,
+    Dict,
+    Type,
+)
+from uuid import UUID
 
 from flask import (
     Flask,
@@ -22,8 +27,32 @@ def make_json_response(body: Any) -> Response:
     return resp
 
 
+def make_typed_json_response(blob: Any) -> Response:
+    # FIXME: Typecheck this thing --GM
+    body: Dict[str, Any] = {
+        k: type(blob).pack_field(default_json_packer, k, getattr(blob, k))
+        for k in blob.__slots__
+        if getattr(blob, k) is not None
+    }
+    return make_json_response(body)
+
+
+def unpack_typed_json(Base: Type[Any], body: Dict[str, Any]) -> Any:
+    # FIXME: Typecheck this thing --GM
+    return Base(**{k: Base.unpack_field(lambda x: x, k, v) for k, v in body.items()})
+
+
 def format_utc_datetime(ts: datetime.datetime, suffix: str = "Z") -> str:
     return ts.isoformat("T") + suffix
+
+
+def default_json_packer(value: Any) -> Any:
+    if isinstance(value, datetime.datetime):
+        return format_utc_datetime(value)
+    elif isinstance(value, UUID):
+        return str(value)
+    else:
+        return value
 
 
 # UNIX timestamp for one hour into the start of 10000 AD.
@@ -70,4 +99,20 @@ assert (
         )
     )
     == 2517116271230010490
+)
+
+assert (
+    compute_reverse_timestamp(
+        datetime.datetime(
+            year=2023,
+            month=7,
+            day=29,
+            hour=23,
+            minute=34,
+            second=57,
+            microsecond=320033,  # +0.4
+        )
+    )
+    == 2517116271026799670
+    # >2517116271026799665
 )

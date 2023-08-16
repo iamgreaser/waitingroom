@@ -11,17 +11,16 @@ from uuid import (
 )
 from typing import (
     Any,
-    Dict,
+    Callable,
     Optional,
-    cast,
-    get_type_hints,
 )
 
 from ..base import (
     app,
     compute_reverse_timestamp,
     format_utc_datetime,
-    make_json_response,
+    make_typed_json_response,
+    unpack_typed_json,
 )
 
 from flask import (
@@ -33,11 +32,6 @@ from flask import (
 #
 # POST[U]|PATCH[A] /api/neosSessions
 #
-
-
-# NOTE: Python's datetime module cannot handle the year 10000 AD, so we can use this metric instead:
-# - Days from the start of 2000 AD until the start of 10000 AD: 2921940 (results in issues!)
-# - Days from the start of 9999 AD until the start of 10000 AD: 365
 
 
 #
@@ -85,59 +79,57 @@ class NeosSessions:
     ] = None  # RESPONSE ONLY - same time used for eTag EXCEPT it uses "+00:00" instead of "Z" at the end.
     visitedWorlds: Optional[int] = None
 
+    @classmethod
+    def pack_field(cls, default: Callable[[Any], Any], name: str, value: Any) -> Any:
+        if name == "timestamp":
+            return format_utc_datetime(
+                value, suffix="+00:00"
+            )  # I did not create this API.
+        else:
+            return default(value)
+
+    @classmethod
+    def unpack_field(cls, default: Callable[[Any], Any], name: str, value: Any) -> Any:
+        # TODO: Work out how to support this properly --GM
+        return default(value)
+
 
 @app.route("/api/neosSessions", methods=["POST", "PATCH"])
 def api_neosSessions() -> Response:
-    # TODO: Hoist the parsing out into base --GM
     inbody = request.get_json()
     if not isinstance(inbody, dict):
         return make_response("Bad request", 400)
-    if False:
-        # FIXME: We need to actually parse this information --GM
-        hints = get_type_hints(NeosSessions)
-        for k, v in inbody.items():
-            logging.warn(f"type: {hints[k]}")
 
     try:
-        blob = NeosSessions(**inbody)
+        blob: NeosSessions = unpack_typed_json(NeosSessions, inbody)
     except TypeError:
         return make_response("Bad request", 400)
     else:
         if request.method == "POST":
             # TODO: Process this stuff instead of returning it directly --GM
-            # FIXME this all needs to actually serialise instead of us just making a string --GM
             blob.clientIp = request.remote_addr
 
             now = datetime.datetime.utcnow()
             nowstr = format_utc_datetime(now)
-            blob.timestamp = cast(
-                datetime.datetime,
-                format_utc_datetime(now, suffix="+00:00"),
-            )  # I did not create this API.
+            blob.timestamp = now
             blob.eTag = f"W/\"datetime'{urllib.parse.quote(nowstr)}'\""
 
             # Copy this across
             if blob.sessionEnd is None:
                 blob.sessionEnd = blob.sessionStart
 
-            # FIXME: We need proper serialisation and then we need to get rid of these casts --GM
             # TODO: Actually use this value --GM
             if blob.sessionId is None:
                 sessionId = uuid4()
-                blob.sessionId = cast(UUID, str(sessionId))
-                blob.rowKey = cast(UUID, str(sessionId))
+                blob.sessionId = sessionId
+                blob.rowKey = sessionId
 
             blob.reverseTimestamp = str(compute_reverse_timestamp(now))
             blob.partitionKey = blob.reverseTimestamp
 
             # TODO: userId (eventually) --GM
-            # TODO: Hoist this out into base --GM
-            body: Dict[str, Any] = {
-                k: getattr(blob, k)
-                for k in blob.__slots__
-                if getattr(blob, k) is not None
-            }
-            return make_json_response(body)
+
+            return make_typed_json_response(blob)
         elif request.method == "PATCH":
             return make_response(f"TODO PATCH {blob!r}", 500)
         else:
