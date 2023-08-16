@@ -48,7 +48,7 @@ class OnlineUserStats:
 def api_stats_onlineUserStats() -> Response:
     # FIXME generate this properly --GM
     now = datetime.datetime.utcnow()
-    return make_typed_json_response(
+    resp = make_typed_json_response(
         OnlineUserStats(
             captureTimestamp=now,
             registeredUserCount=1,
@@ -66,6 +66,9 @@ def api_stats_onlineUserStats() -> Response:
             ETag=None,
         )
     )
+    # QUIRK: The API server reports this as text/plain. Probably uses a different codepath from the other JSON stuff.
+    resp.mimetype = "text/plain; charset=utf-8"
+    return resp
 
 
 #
@@ -75,5 +78,5 @@ def api_stats_onlineUserStats() -> Response:
 
 @app.route("/api/stats/instanceOnline/<machineId>", methods=["POST"])
 def api_stats_instanceOnline(machineId: str) -> Response:
-    # FIXME generate this properly --GM
+    # FIXME use this properly --GM
     return make_response("", 200)

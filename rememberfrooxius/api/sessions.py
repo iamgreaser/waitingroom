@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+import datetime
+
 from flask import (
     Response,
     make_response,
@@ -8,12 +11,19 @@ from flask import (
 
 from ..base import (
     app,
+    format_utc_datetime,
     make_json_response,
 )
 
 #
 # POST[U/A]|PUT[U/A], GET[U/A] /api/sessions
 #
+
+
+@dataclass()
+class Session:
+    # TODO!
+    pass
 
 
 @app.route("/api/sessions", methods=["POST", "PUT", "GET"])

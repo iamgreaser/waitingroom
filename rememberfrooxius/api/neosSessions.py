@@ -131,6 +131,8 @@ def api_neosSessions() -> Response:
 
             return make_typed_json_response(blob)
         elif request.method == "PATCH":
-            return make_response(f"TODO PATCH {blob!r}", 500)
+            # TODO: Handle this properly --GM
+            return make_response("", 204)
+            # return make_response(f"TODO PATCH {blob!r}", 500)
         else:
             raise Exception("invalid method - should have been caught higher up!")
