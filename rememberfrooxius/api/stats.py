@@ -14,7 +14,7 @@ from ..base import (
     app,
     compute_reverse_timestamp,
     format_utc_datetime,
-    make_json_response,
+    make_typed_json_response,
 )
 
 #
@@ -22,30 +22,6 @@ from ..base import (
 #
 # Displayed online user count on dash menu is f"{registeredUserCount-headlessUserCount}(~{instanceCount})"
 #
-
-
-@app.route("/api/stats/onlineUserStats", methods=["GET"])
-def api_stats_onlineUserStats() -> Response:
-    # FIXME generate this properly --GM
-    now = datetime.datetime.utcnow()
-    return make_json_response(
-        {
-            "captureTimestamp": format_utc_datetime(now),
-            "registeredUserCount": 1,
-            "instanceCount": 2,
-            "vrUserCount": 4,
-            "screenUserCount": 8,
-            "headlessUserCount": 0,
-            "mobileUserCount": 32,
-            "publicSessionCount": 64,
-            "activePublicSessionCount": 128,
-            "publicWorldUserCount": 256,
-            "PartitionKey": compute_reverse_timestamp(now),
-            "RowKey": "",
-            "Timestamp": "0001-01-01T00:00:00+00:00",
-            "ETag": None,
-        }
-    )
 
 
 @dataclass(slots=True)
@@ -66,3 +42,38 @@ class OnlineUserStats:
     RowKey: str  # This is indeed a camelO - seems to be empty?
     Timestamp: str = "0001-01-01T00:00:00+00:00"  # This is indeed a camelO, also that's the actual timestamp string
     ETag: Optional[str] = None  # This is indeed a camelO
+
+
+@app.route("/api/stats/onlineUserStats", methods=["GET"])
+def api_stats_onlineUserStats() -> Response:
+    # FIXME generate this properly --GM
+    now = datetime.datetime.utcnow()
+    return make_typed_json_response(
+        OnlineUserStats(
+            captureTimestamp=now,
+            registeredUserCount=1,
+            instanceCount=2,
+            vrUserCount=4,
+            screenUserCount=8,
+            headlessUserCount=0,
+            mobileUserCount=32,
+            publicSessionCount=64,
+            activePublicSessionCount=128,
+            publicWorldUserCount=256,
+            PartitionKey=str(compute_reverse_timestamp(now)),
+            RowKey="",
+            Timestamp="0001-01-01T00:00:00+00:00",
+            ETag=None,
+        )
+    )
+
+
+#
+# POST[U/A] /api/stats/instanceOnline/<machineId>
+#
+
+
+@app.route("/api/stats/instanceOnline/<machineId>", methods=["POST"])
+def api_stats_instanceOnline(machineId: str) -> Response:
+    # FIXME generate this properly --GM
+    return make_response("", 200)

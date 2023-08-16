@@ -29,17 +29,32 @@ def make_json_response(body: Any) -> Response:
 
 def make_typed_json_response(blob: Any) -> Response:
     # FIXME: Typecheck this thing --GM
-    body: Dict[str, Any] = {
-        k: type(blob).pack_field(default_json_packer, k, getattr(blob, k))
-        for k in blob.__slots__
-        if getattr(blob, k) is not None
-    }
-    return make_json_response(body)
+    if hasattr(type(blob), "pack_field"):
+        return make_json_response(
+            {
+                k: type(blob).pack_field(default_json_packer, k, getattr(blob, k))
+                for k in blob.__slots__
+                if getattr(blob, k) is not None
+            }
+        )
+    else:
+        return make_json_response(
+            {
+                k: default_json_packer(getattr(blob, k))
+                for k in blob.__slots__
+                if getattr(blob, k) is not None
+            }
+        )
 
 
 def unpack_typed_json(Base: Type[Any], body: Dict[str, Any]) -> Any:
     # FIXME: Typecheck this thing --GM
-    return Base(**{k: Base.unpack_field(lambda x: x, k, v) for k, v in body.items()})
+    if hasattr(Base, "unpack_field"):
+        return Base(
+            **{k: Base.unpack_field(lambda x: x, k, v) for k, v in body.items()}
+        )
+    else:
+        return Base(**body)
 
 
 def format_utc_datetime(ts: datetime.datetime, suffix: str = "Z") -> str:
