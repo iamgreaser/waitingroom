@@ -17,8 +17,12 @@ from flask import (
     make_response,
 )
 
+# TODO: Find a Flask websocket binding that actually uses type annotations, because I am already disappointed with this one before I even get the chance to like it --GM
+from flask_sock import Sock  # type: ignore
+
 
 app = Flask(__name__)
+websocket_base = Sock(app)
 
 
 def make_json_response(body: Any) -> Response:

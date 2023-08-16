@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import subprocess
 
-import flask
 from flask import (
     Response,
     make_response,
@@ -14,8 +13,11 @@ from .base import (
     format_utc_datetime,
     make_json_response,
 )
+
+# Endpoints
 from . import (
     api,
+    hub,
     install_ServerResponse,
 )
 
@@ -62,7 +64,7 @@ for asset_root, asset_list in ASSET_PATHS.items():
 
 @app.route("/")
 def root() -> Response:
-    resp = flask.make_response(
+    resp = make_response(
         "<h1>It Works!</h1>",
     )
     resp.mimetype = "text/html"
