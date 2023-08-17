@@ -4,10 +4,15 @@ import datetime
 import json
 import logging
 import math
+import typing
 from typing import (
     Any,
     Dict,
+    List,
+    Optional,
     Type,
+    Union,
+    get_type_hints,
 )
 from uuid import UUID
 
@@ -17,8 +22,11 @@ from flask import (
     make_response,
 )
 
-# TODO: Find a Flask websocket binding that actually uses type annotations, because I am already disappointed with this one before I even get the chance to like it --GM
+# TODO: Find (or make) a Flask websocket binding that actually uses type annotations, because I am already disappointed with this one before I even get the chance to like it --GM
 from flask_sock import Sock  # type: ignore
+
+
+LOG_TYPECHECKS = False
 
 
 app = Flask(__name__)
@@ -26,52 +34,156 @@ websocket_base = Sock(app)
 
 
 def make_json_response(body: Any) -> Response:
-    resp = make_response(json.dumps(body))
+    resp = make_response(json.dumps(body, ensure_ascii=False, separators=(",", ":")))
     resp.mimetype = "application/json; charset=utf-8"
     return resp
 
 
-def make_typed_json_response(blob: Any) -> Response:
-    # FIXME: Typecheck this thing --GM
-    if hasattr(type(blob), "pack_field"):
-        return make_json_response(
-            {
-                k: type(blob).pack_field(default_json_packer, k, getattr(blob, k))
-                for k in blob.__slots__
-                if getattr(blob, k) is not None
-            }
-        )
+def make_typed_json_response(
+    blob: Any, *, obj_type: Optional[Type[Any]] = None
+) -> Response:
+    if obj_type is None:
+        rt = type(blob)
     else:
-        return make_json_response(
-            {
-                k: default_json_packer(getattr(blob, k))
-                for k in blob.__slots__
-                if getattr(blob, k) is not None
-            }
-        )
+        rt = obj_type
+    return make_json_response(default_json_packer(rt, blob))
 
 
-def unpack_typed_json(Base: Type[Any], body: Dict[str, Any]) -> Any:
-    # FIXME: Typecheck this thing --GM
-    if hasattr(Base, "unpack_field"):
-        return Base(
-            **{k: Base.unpack_field(lambda x: x, k, v) for k, v in body.items()}
-        )
+def check_type(t: Type[Any], value: Any) -> Type[Any]:
+    if LOG_TYPECHECKS:
+        logging.warning(f"pack type {t!r} {value!r}")
+    torig = typing.get_origin(t)
+    if LOG_TYPECHECKS:
+        logging.warning(f"pack type {t!r} origin {torig!r}")
+    if torig is None:
+        if not isinstance(value, t):
+            raise TypeError(
+                f"type mismatch when typechecking JSON: {type(value)!r} is not a closed subset of {t!r}"
+            )
+        return t
     else:
-        return Base(**body)
+        targs = typing.get_args(t)
+        if LOG_TYPECHECKS:
+            logging.warning(f"pack type {t!r} origin {torig!r} args {targs!r}")
+        if torig == Union:  # Optional uses this
+            for child in targs[:-1]:
+                try:
+                    return check_type(child, value)
+                except TypeError:
+                    continue
+            else:
+                return check_type(targs[-1], value)
+        elif torig == List or torig == list:
+            (child,) = targs
+            return child  # type: ignore
+        else:
+            raise Exception(f"TODO: type origin {torig!r} args {targs!r}")
 
 
-def format_utc_datetime(ts: datetime.datetime, suffix: str = "Z") -> str:
-    return ts.isoformat("T") + suffix
+def default_json_packer(t: Type[Any], value: Any) -> Any:
+    ctype = check_type(t, value)
+    if LOG_TYPECHECKS:
+        logging.warning(f"pack type {t!r} -> {ctype!r}")
 
-
-def default_json_packer(value: Any) -> Any:
-    if isinstance(value, datetime.datetime):
+    if isinstance(value, str) or isinstance(value, int) or isinstance(value, float):
+        return value
+    elif value is None:
+        return value
+    elif isinstance(value, list):
+        return [default_json_packer(ctype, v) for v in value]
+    elif isinstance(value, datetime.datetime):
         return format_utc_datetime(value)
     elif isinstance(value, UUID):
         return str(value)
     else:
-        return value
+        hints = get_type_hints(type(value))
+        return {
+            k: default_json_packer(hints[k], getattr(value, k))
+            for k in value.__slots__
+            if getattr(value, k) is not None
+        }
+
+
+def unpack_typed_json(Base: Type[Any], body: Dict[str, Any]) -> Any:
+    # FIXME: Typecheck this thing --GM
+    hints = get_type_hints(Base)
+    return Base(**{k: default_json_unpacker(hints[k], v) for k, v in body.items()})
+
+
+def default_json_unpacker(t: Type[Any], v: Any) -> Any:
+    if LOG_TYPECHECKS:
+        logging.warning(f"unpack type {t!r}")
+
+    torig = typing.get_origin(t)
+    if torig is not None:
+        targs = typing.get_args(t)
+        if torig == Union:
+            if len(targs) == 2 and targs[1] == type(None):
+                if v is None:
+                    return v
+                else:
+                    t = targs[0]
+            else:
+                raise Exception(f"TODO origin {torig!r} args {targs!r}")
+        else:
+            raise Exception(f"TODO origin {torig!r} args {targs!r}")
+
+    if LOG_TYPECHECKS:
+        logging.warning(f"unpack type real {t!r}")
+
+    if t == datetime.datetime:
+        assert isinstance(v, str)
+        return parse_utc_datetime(v)
+    elif t == UUID:
+        assert isinstance(v, str)
+        return UUID(v)
+    else:
+        return v
+
+
+def format_utc_datetime(ts: datetime.datetime) -> str:
+    # Ignoring suffix here, we don't generate garbage
+    return ts.isoformat("T", "microseconds") + "Z"
+
+
+# Smoke tests
+assert (
+    format_utc_datetime(datetime.datetime(year=2018, month=1, day=1))
+    == "2018-01-01T00:00:00.000000Z"
+)
+
+
+def parse_utc_datetime(s: str) -> datetime.datetime:
+    # Strip the timezone component
+    if s.endswith("+00:00"):
+        s = s.rpartition("+")[0]
+    elif s.endswith("Z"):
+        s = s[:-1]
+
+    return datetime.datetime.fromisoformat(s)
+
+
+assert parse_utc_datetime("2018-01-01T00:00:00.000000Z") == datetime.datetime(
+    year=2018, month=1, day=1
+)
+assert parse_utc_datetime("2018-01-01T00:00:00.0000001Z") == datetime.datetime(
+    year=2018, month=1, day=1
+)
+assert parse_utc_datetime("2018-01-01T00:00:00.0000012Z") == datetime.datetime(
+    year=2018, month=1, day=1, microsecond=1
+)
+assert parse_utc_datetime("2018-01-01T00:00:00") == datetime.datetime(
+    year=2018, month=1, day=1
+)
+assert parse_utc_datetime("2018-01-01T00:00:00.000000+00:00") == datetime.datetime(
+    year=2018, month=1, day=1
+)
+assert parse_utc_datetime("2018-01-01T00:00:00.0000001+00:00") == datetime.datetime(
+    year=2018, month=1, day=1
+)
+assert parse_utc_datetime("2018-01-01T00:00:00.0000012+00:00") == datetime.datetime(
+    year=2018, month=1, day=1, microsecond=1
+)
 
 
 # UNIX timestamp for one hour into the start of 10000 AD.

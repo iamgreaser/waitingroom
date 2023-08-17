@@ -127,3 +127,20 @@ def client_websocket(ws: Any) -> None:
 #    "iat": 1690858681,
 #    "aud": "https://cloudx.service.signalr.net/client/?hub=apphub",
 # }
+
+#
+# Spec for SignalR hub protocol: https://github.com/dotnet/aspnetcore/blob/main/src/SignalR/docs/specs/HubProtocol.md
+# Messages observed:
+#
+# Type 6: Ping - purely used as a keepalive
+#
+# {"type":6}\x1e
+#
+# Type 1: Invocation
+#
+# {"type":1,"target":"SendMessage","arguments":[{"id":"MSG-aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa","ownerId":"U-From","recipientId":"U-To","senderId":"U-From","messageType":"Text","content":"Hey, can you send a message back to me? I just need to test something.","sendTime":"2023-08-16T21:05:51.570726Z","lastUpdateTime":"0001-01-01T00:00:00","readTime":null}]}\x1e
+# {"type":1,"target":"MessageSent","arguments":[{"id":"MSG-aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa","ownerId":"U-To","recipientId":"U-To","senderId":"U-From","messageType":"Text","content":"Hey, can you send a message back to me? I just need to test something.","sendTime":"2023-08-16T21:05:51.570726Z","lastUpdateTime":"2023-08-16T21:05:51.0999508Z","readTime":null}]}\x1e
+# {"type":1,"target":"MessagesRead","arguments":[{"recipientId":"U-To","readTime":"2023-08-16T21:05:53.0255815Z","ids":["MSG-aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa"]}]}\x1e
+# {"type":1,"target":"ReceiveMessage","arguments":[{"id":"MSG-bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb","ownerId":"U-From","recipientId":"U-From","senderId":"U-To","messageType":"Text","content":"Hello :)","sendTime":"2023-08-16T21:06:08.2111369Z","lastUpdateTime":"2023-08-16T21:06:13.3875945Z","readTime":null}]}\x1e
+# {"type":1,"target":"MarkMessagesRead","arguments":[{"senderId":"U-To","ids":["MSG-bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb"],"readTime":"2023-08-16T21:06:14.120171Z"}]}\x1e
+#

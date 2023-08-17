@@ -16,32 +16,15 @@ from ..base import (
     format_utc_datetime,
     make_typed_json_response,
 )
+from ..models import (
+    OnlineUserStats,
+)
 
 #
 # GET[U/A] /api/stats/onlineUserStats
 #
 # Displayed online user count on dash menu is f"{registeredUserCount-headlessUserCount}(~{instanceCount})"
 #
-
-
-@dataclass(slots=True)
-class OnlineUserStats:
-    # This is the order I received this in a dump once.
-    captureTimestamp: datetime.datetime
-    registeredUserCount: int
-    instanceCount: int
-    vrUserCount: int
-    screenUserCount: int
-    headlessUserCount: int
-    mobileUserCount: int
-    publicSessionCount: int
-    activePublicSessionCount: int
-    publicWorldUserCount: int
-
-    PartitionKey: str  # This is indeed a camelO - also (almost) exactly the same timestamp as captureTimestamp as a reverse timestamp
-    RowKey: str  # This is indeed a camelO - seems to be empty?
-    Timestamp: str = "0001-01-01T00:00:00+00:00"  # This is indeed a camelO, also that's the actual timestamp string
-    ETag: Optional[str] = None  # This is indeed a camelO
 
 
 @app.route("/api/stats/onlineUserStats", methods=["GET"])

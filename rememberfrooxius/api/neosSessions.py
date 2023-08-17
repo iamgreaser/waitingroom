@@ -15,6 +15,12 @@ from typing import (
     Optional,
 )
 
+from flask import (
+    Response,
+    make_response,
+    request,
+)
+
 from ..base import (
     app,
     compute_reverse_timestamp,
@@ -22,76 +28,13 @@ from ..base import (
     make_typed_json_response,
     unpack_typed_json,
 )
-
-from flask import (
-    Response,
-    make_response,
-    request,
+from ..models import (
+    NeosSessions,
 )
 
 #
 # POST[U]|PATCH[A] /api/neosSessions
 #
-
-
-#
-# When first joining, a POST is sent early and a reply is made, then later on a PATCH is sent.
-# These have been checked against a desktop user running the Linux version.
-#
-# missing in requests: clientIp, eTag, partitionKey, rowKey, timestamp
-# missing in responses: countryCode, headDeviceModel, peripherals, userId
-# null in all requests: countryCode, headDeviceModel, peripherals
-# null in POST requests: reverseTimestamp, sessionId, userId
-#
-@dataclass(slots=True)
-class NeosSessions:
-    clientIp: Optional[str] = None  # RESPONSE ONLY
-    countryCode: Optional[
-        str
-    ] = None  # REQUEST ONLY - TODO: Work out what the actual type is --GM
-    cpu: Optional[str] = None
-    createdWorlds: Optional[int] = None
-    eTag: Optional[str] = None  # RESPONSE ONLY - "W/\"datetime'{urlescape(utcnow)}'\""
-    gpu: Optional[str] = None
-    headDevice: Optional[str] = None
-    headDeviceModel: Optional[
-        str
-    ] = None  # REQUEST ONLY - TODO: Work out what the actual type is --GM
-    machineId: Optional[str] = None
-    memoryBytes: Optional[int] = None
-    neosVersion: Optional[str] = None
-    operatingSystem: Optional[str] = None
-    partitionKey: Optional[str] = None  # RESPONSE ONLY - Equal to reverseTimestamp.
-    peripherals: Optional[
-        str
-    ] = None  # REQUEST ONLY - TODO: Work out what the actual type is --GM
-    reverseTimestamp: Optional[
-        str
-    ] = None  # This is a long decimal number, in units of 10^-7 seconds until 10000 AD.
-    rowKey: Optional[UUID] = None  # RESPONSE ONLY - Equal to sessionId.
-    sessionEnd: Optional[datetime.datetime] = None
-    sessionId: Optional[UUID] = None
-    sessionStart: Optional[datetime.datetime] = None
-    systemLocale: Optional[str] = None
-    userId: Optional[str] = None  # REQUEST ONLY?
-    timestamp: Optional[
-        datetime.datetime
-    ] = None  # RESPONSE ONLY - same time used for eTag EXCEPT it uses "+00:00" instead of "Z" at the end.
-    visitedWorlds: Optional[int] = None
-
-    @classmethod
-    def pack_field(cls, default: Callable[[Any], Any], name: str, value: Any) -> Any:
-        if name == "timestamp":
-            return format_utc_datetime(
-                value, suffix="+00:00"
-            )  # I did not create this API.
-        else:
-            return default(value)
-
-    @classmethod
-    def unpack_field(cls, default: Callable[[Any], Any], name: str, value: Any) -> Any:
-        # TODO: Work out how to support this properly --GM
-        return default(value)
 
 
 @app.route("/api/neosSessions", methods=["POST", "PATCH"])
