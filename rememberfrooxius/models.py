@@ -63,7 +63,7 @@ class UserStatus:
 
 @dataclass(slots=True)
 class Message:
-    content: str  # WARNING: For "Text" messages, these appear to be limited to no more than 510 characters, maybe 509 is the practical limit. The client will truncate a longer message and append a "..." if whatever the limit is is violated.
+    content: str  # NOTE: For "Text" messages, the maximum length of a message is 512 UTF-16 values. If this limit is crossed, then on the client it gets truncated to the first 510 UTF-16 values (apparently discarding incomplete UTF-16 surrogate pairs if one has a U+10000-or-higher character in there, so possibly 509 values), then appends "..." to the end.
     id: str  # MSG-{someuuid}
     lastUpdateTime: datetime.datetime
     messageType: str  # "Text", "SessionInvite" (contains a Session blob), ?

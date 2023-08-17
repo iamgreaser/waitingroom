@@ -81,8 +81,6 @@ def api_users_id_friends(userId: str) -> Response:
 #
 
 
-# NOTE: Maximum length of a message appears to be 510, then it gets truncated with "..." at the end? Either way, if you want to make long messages, you have to be aware of the limit and split accordingly.
-
 INTRO_MESSAGE_LINES = [
     [
         "Howdy! Welcome to the completely unofficial Resonite waiting room.",
