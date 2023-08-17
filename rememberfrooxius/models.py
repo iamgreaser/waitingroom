@@ -39,21 +39,47 @@ class FriendProfile:
 
 @dataclass(slots=True)
 class UserStatus:
-    # compatibilityHash: Optional[str] = None  # base64 +/, 22 wide then "==" padding (128-bit value?), normally "jnnkdwkBqGv5+jlf1u/k7A==" for version 2022.1.28.1335
+    # activeSessions: Optional[List[Session]] = None
+    # compatibilityHash: Optional[str] = None
     currentHosting: bool
+    # currentSession: Optional[Session] = None
     currentSessionAccessLevel: int  # 0 = private(enum name unknown), 2 = ?, 3 = "FriendsOfFriends", 4 = "RegisteredUsers"...?, 5 = "Anyone"
     currentSessionHidden: bool
+    # currentSessionId: Optional[str] = None
     isMobile: bool
     lastStatusChange: datetime.datetime  # Defaults to "2018-01-01T00:00:00" which we'll also report but we'll format it consistently as per everything else
-    # neosVersion: Optional[str] = None  # Normally "2022.1.28.1335"
+    # neosVersion: Optional[str] = None
     onlineStatus: str  # "Offline", "Busy", "Away", "Online", ...?
     outputDevice: str  # outputDevice: ? = "Unknown", 1 = "Headless", 2 = "Screen", 3 = "VR" - FIXME make an enum for this --GM
+    # publicRSAKey: Optional[RSAKey] = None
 
     # Optionals
+    activeSessions: Optional[
+        List[Session]
+    ] = None  # Present when not empty after appropriate filtering
     compatibilityHash: Optional[
         str
     ] = None  # base64 +/, 22 wide then "==" padding (128-bit value?), normally "jnnkdwkBqGv5+jlf1u/k7A==" for version 2022.1.28.1335
+    currentSession: Optional[Session] = None  # Present when visible to this user
+    currentSessionId: Optional[
+        str
+    ] = None  # S-{someuuid} format, present when session is visible to this user
     neosVersion: Optional[str] = None  # Normally "2022.1.28.1335"
+    publicRSAKey: Optional[RSAKey] = None  # Present when online, usually
+
+
+@dataclass(slots=True)
+class RSAKey:
+    # All of these fields probably use standard (+/ padded) base64.
+    # A public key uses Modulus and Exponent only. (If it had P and Q, you'd be in trouble lol)
+    D: Optional[str] = None
+    DP: Optional[str] = None
+    DQ: Optional[str] = None
+    Exponent: Optional[str] = None
+    InverseQ: Optional[str] = None
+    Modulus: Optional[str] = None
+    P: Optional[str] = None
+    Q: Optional[str] = None
 
 
 #

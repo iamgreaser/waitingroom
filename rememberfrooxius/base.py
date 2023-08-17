@@ -137,6 +137,8 @@ def default_json_unpacker(t: Type[Any], v: Any) -> Any:
     elif t == UUID:
         assert isinstance(v, str)
         return UUID(v)
+    elif isinstance(v, dict):
+        return unpack_typed_json(t, v)
     else:
         return v
 

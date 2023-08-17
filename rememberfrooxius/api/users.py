@@ -180,3 +180,26 @@ def api_users_id_messages(userId: str) -> Response:
         messages = messages[:q_maxItems]
 
     return make_typed_json_response(messages, obj_type=List[Message])
+
+
+@app.route("/api/users/<userId>/status", methods=["PUT"])
+def api_users_id_status(userId: str) -> Response:
+    inbody = request.get_json()
+    if not isinstance(inbody, dict):
+        return make_response("Bad request", 400)
+
+    # API BUG: "CurrentSession" is used instead of "currentSession". Remap accordingly.
+    if "CurrentSession" in inbody:
+        if "currentSession" in inbody:
+            return make_response("Bad request", 400)
+        inbody["currentSession"] = inbody["CurrentSession"]
+        del inbody["CurrentSession"]
+
+    try:
+        blob: UserStatus = unpack_typed_json(UserStatus, inbody)
+    except TypeError:
+        return make_response("Bad request", 400)
+    else:
+        # TODO! --GM
+        logging.warning(f"Got user status: {blob!r}")
+        return make_response("", 200)
