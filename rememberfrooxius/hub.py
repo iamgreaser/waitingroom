@@ -13,16 +13,16 @@ from typing import (
 )
 import urllib
 
-from flask import (
-    Response,
+from quart import (
+    ResponseReturnValue,
     request,
+    websocket,
 )
 
 from .base import (
     app,
     make_json_response,
     make_typed_json_response,
-    websocket_base,
 )
 
 #
@@ -39,10 +39,10 @@ class HubNegotiateResponse:
 
 
 @app.route("/hub/negotiate", methods=["POST"])
-def hub_negotiate() -> Response:
+async def hub_negotiate() -> ResponseReturnValue:
     # FIXME the URL formation is not safe here! --GM
     negotiateVersion = 1  # TODO: Get it from the URL --GM
-    return make_typed_json_response(
+    return await make_typed_json_response(
         HubNegotiateResponse(
             accessToken="TODOINSERTJWTHERE",
             availableTransports=[],
@@ -70,13 +70,13 @@ def hub_negotiate() -> Response:
 
 
 @app.route("/client/negotiate", methods=["POST"])
-def client_negotiate() -> Response:
+async def client_negotiate() -> ResponseReturnValue:
     # Pilfered from mitmproxy.
     # Generate a maybe-nearly-websafe (_ is used, but is - used or is this still + like the 2048-bit tokens?) unpadded-base64 31-char connectionId --GM
     connectionId = (
         base64.b64encode(os.urandom(23), altchars=b"-_").decode("utf-8").rstrip("=")
     )
-    return make_json_response(
+    return await make_json_response(
         {
             "availableTransports": [
                 {"transferFormats": ["Text", "Binary"], "transport": "WebSockets"},
@@ -94,14 +94,14 @@ def client_negotiate() -> Response:
 #
 # This takes an Authorization: Bearer token, with the given JWT from /hub/negotiate, field "accessToken".
 #
-@websocket_base.route("/client/")  # type: ignore
-def client_websocket(ws: Any) -> None:
+@app.websocket("/client/")
+async def client_websocket() -> None:
     # WARNING: This is a lazy approach --GM
-    data = ws.receive()
-    ws.send(json.dumps({}).encode("utf-8") + b"\x1e")
+    data = await websocket.receive()
+    await websocket.send(json.dumps({}).encode("utf-8") + b"\x1e")
     while True:
-        data = ws.receive()
-        ws.send(json.dumps({"type": 6}).encode("utf-8") + b"\x1e")
+        data = await websocket.receive()
+        await websocket.send(json.dumps({"type": 6}).encode("utf-8") + b"\x1e")
 
 
 # Normal URL: https://cloudx.service.signalr.net/client/?hub=apphub&asrs.op=%2Fhub&negotiateVersion=1&asrs_request_id={someRequestId}

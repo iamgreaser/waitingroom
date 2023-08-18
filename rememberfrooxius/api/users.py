@@ -14,8 +14,8 @@ from typing import (
 )
 import urllib
 
-from flask import (
-    Response,
+from quart import (
+    ResponseReturnValue,
     make_response,
     request,
 )
@@ -40,12 +40,12 @@ from ..models import (
 
 
 @app.route("/api/users/<userId>/friends", methods=["GET"])
-def api_users_id_friends(userId: str) -> Response:
+async def api_users_id_friends(userId: str) -> ResponseReturnValue:
     # GET args:
     # - optional lastStatusUpdate: datetime.datetime
 
     # FIXME do this properly instead of using a stub --GM
-    return make_typed_json_response(
+    return await make_typed_json_response(
         [
             Friend(
                 friendStatus="Accepted",
@@ -114,7 +114,7 @@ INTRO_MESSAGE = ["\n".join(grp) for grp in INTRO_MESSAGE_LINES]
 
 
 @app.route("/api/users/<userId>/messages", methods=["GET"])
-def api_users_id_messages(userId: str) -> Response:
+async def api_users_id_messages(userId: str) -> ResponseReturnValue:
     # FIXME we really need to authenticate in order to actually get a coherent answer instead of pretending that the use is always U-GreaseMonkey --GM
 
     # GET args:
@@ -179,27 +179,27 @@ def api_users_id_messages(userId: str) -> Response:
     if q_maxItems >= 0:
         messages = messages[:q_maxItems]
 
-    return make_typed_json_response(messages, obj_type=List[Message])
+    return await make_typed_json_response(messages, obj_type=List[Message])
 
 
 @app.route("/api/users/<userId>/status", methods=["PUT"])
-def api_users_id_status(userId: str) -> Response:
-    inbody = request.get_json()
+async def api_users_id_status(userId: str) -> ResponseReturnValue:
+    inbody = await request.get_json()
     if not isinstance(inbody, dict):
-        return make_response("Bad request", 400)
+        return await make_response("Bad request", 400)
 
     # API BUG: "CurrentSession" is used instead of "currentSession". Remap accordingly.
     if "CurrentSession" in inbody:
         if "currentSession" in inbody:
-            return make_response("Bad request", 400)
+            return await make_response("Bad request", 400)
         inbody["currentSession"] = inbody["CurrentSession"]
         del inbody["CurrentSession"]
 
     try:
         blob: UserStatus = unpack_typed_json(UserStatus, inbody)
     except TypeError:
-        return make_response("Bad request", 400)
+        return await make_response("Bad request", 400)
     else:
         # TODO! --GM
         logging.warning(f"Got user status: {blob!r}")
-        return make_response("", 200)
+        return await make_response("", 200)

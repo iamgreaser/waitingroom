@@ -5,8 +5,8 @@ from typing import Dict
 
 from ..base import app
 
-from flask import (
-    Response,
+from quart import (
+    ResponseReturnValue,
     make_response,
 )
 
@@ -42,13 +42,13 @@ static_globalvars: Dict[str, bytes] = {
 
 
 @app.route("/api/globalvars/<varname>")
-def api_globalvars(varname: str) -> Response:
+async def api_globalvars(varname: str) -> ResponseReturnValue:
     assert isinstance(varname, str)
     try:
         content = static_globalvars[varname]
     except LookupError:
-        return make_response("Not Found", 404)
+        return await make_response("Not Found", 404)
     else:
-        resp = make_response(content)
+        resp = await make_response(content)
         resp.mimetype = "application/json; charset=utf-8"
         return resp

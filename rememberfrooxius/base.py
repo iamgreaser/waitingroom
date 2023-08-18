@@ -16,37 +16,41 @@ from typing import (
 )
 from uuid import UUID
 
-from flask import (
-    Flask,
-    Response,
+from quart import (
+    Quart,
+    ResponseReturnValue,
     make_response,
 )
 
-# TODO: Find (or make) a Flask websocket binding that actually uses type annotations, because I am already disappointed with this one before I even get the chance to like it --GM
-from flask_sock import Sock  # type: ignore
+# TODO: Find (or make) a Quart websocket binding that actually uses type annotations, because I am already disappointed with this one before I even get the chance to like it --GM
+# from quart_sock import Sock  # type: ignore
 
 
 LOG_TYPECHECKS = False
 
 
-app = Flask(__name__)
-websocket_base = Sock(app)
+app = Quart(__name__)
 
 
-def make_json_response(body: Any) -> Response:
-    resp = make_response(json.dumps(body, ensure_ascii=False, separators=(",", ":")))
+async def make_json_response(body: Any) -> ResponseReturnValue:
+    resp = await make_response(
+        json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+    )
     resp.mimetype = "application/json; charset=utf-8"
     return resp
 
 
-def make_typed_json_response(
-    blob: Any, *, obj_type: Optional[Type[Any]] = None
-) -> Response:
+async def make_typed_json_response(
+    blob: Any,
+    *,
+    obj_type: Optional[Type[Any]] = None,
+    mimetype: Optional[str] = None,
+) -> ResponseReturnValue:
     if obj_type is None:
         rt = type(blob)
     else:
         rt = obj_type
-    return make_json_response(default_json_packer(rt, blob))
+    return await make_json_response(default_json_packer(rt, blob))
 
 
 def check_type(t: Type[Any], value: Any) -> Type[Any]:

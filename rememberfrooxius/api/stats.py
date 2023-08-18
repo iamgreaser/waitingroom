@@ -4,8 +4,8 @@ from dataclasses import dataclass
 import datetime
 from typing import Optional
 
-from flask import (
-    Response,
+from quart import (
+    ResponseReturnValue,
     make_response,
     request,
 )
@@ -28,10 +28,10 @@ from ..models import (
 
 
 @app.route("/api/stats/onlineUserStats", methods=["GET"])
-def api_stats_onlineUserStats() -> Response:
+async def api_stats_onlineUserStats() -> ResponseReturnValue:
     # FIXME generate this properly --GM
     now = datetime.datetime.utcnow()
-    resp = make_typed_json_response(
+    resp = await make_typed_json_response(
         OnlineUserStats(
             captureTimestamp=now,
             registeredUserCount=1,
@@ -47,10 +47,10 @@ def api_stats_onlineUserStats() -> Response:
             RowKey="",
             Timestamp="0001-01-01T00:00:00+00:00",
             ETag=None,
-        )
+        ),
+        # QUIRK: The API server reports this as text/plain. Probably uses a different codepath from the other JSON stuff.
+        mimetype="text/plain; charset=utf-8",
     )
-    # QUIRK: The API server reports this as text/plain. Probably uses a different codepath from the other JSON stuff.
-    resp.mimetype = "text/plain; charset=utf-8"
     return resp
 
 
@@ -60,6 +60,6 @@ def api_stats_onlineUserStats() -> Response:
 
 
 @app.route("/api/stats/instanceOnline/<machineId>", methods=["POST"])
-def api_stats_instanceOnline(machineId: str) -> Response:
+async def api_stats_instanceOnline(machineId: str) -> ResponseReturnValue:
     # FIXME use this properly --GM
-    return make_response("", 200)
+    return await make_response("", 200)

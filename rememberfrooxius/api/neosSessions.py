@@ -15,8 +15,8 @@ from typing import (
     Optional,
 )
 
-from flask import (
-    Response,
+from quart import (
+    ResponseReturnValue,
     make_response,
     request,
 )
@@ -38,15 +38,15 @@ from ..models import (
 
 
 @app.route("/api/neosSessions", methods=["POST", "PATCH"])
-def api_neosSessions() -> Response:
-    inbody = request.get_json()
+async def api_neosSessions() -> ResponseReturnValue:
+    inbody = await request.get_json()
     if not isinstance(inbody, dict):
-        return make_response("Bad request", 400)
+        return await make_response("Bad request", 400)
 
     try:
         blob: NeosSessions = unpack_typed_json(NeosSessions, inbody)
     except TypeError:
-        return make_response("Bad request", 400)
+        return await make_response("Bad request", 400)
     else:
         if request.method == "POST":
             # TODO: Process this stuff instead of returning it directly --GM
@@ -72,10 +72,10 @@ def api_neosSessions() -> Response:
 
             # TODO: userId (eventually) --GM
 
-            return make_typed_json_response(blob)
+            return await make_typed_json_response(blob)
         elif request.method == "PATCH":
             # TODO: Handle this properly --GM
-            return make_response("", 204)
-            # return make_response(f"TODO PATCH {blob!r}", 500)
+            return await make_response("", 204)
+            # return await make_response(f"TODO PATCH {blob!r}", 500)
         else:
             raise Exception("invalid method - should have been caught higher up!")

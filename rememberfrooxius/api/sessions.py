@@ -6,8 +6,8 @@ from typing import (
     List,
 )
 
-from flask import (
-    Response,
+from quart import (
+    ResponseReturnValue,
     make_response,
     request,
 )
@@ -29,14 +29,14 @@ from ..models import (
 
 
 @app.route("/api/sessions", methods=["POST", "PUT", "GET"])
-def api_sessions() -> Response:
+async def api_sessions() -> ResponseReturnValue:
     if request.method == "POST" or request.method == "PUT":
         # TODO! --GM
-        return make_response("", 200)
+        return await make_response("", 200)
     elif request.method == "GET":
         # TODO! --GM
         now = datetime.datetime.utcnow()
-        return make_typed_json_response(
+        return await make_typed_json_response(
             [],
             obj_type=List[Session],
         )

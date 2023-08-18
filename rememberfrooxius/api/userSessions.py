@@ -12,8 +12,8 @@ from typing import (
 )
 import urllib
 
-from flask import (
-    Response,
+from quart import (
+    ResponseReturnValue,
     make_response,
     request,
 )
@@ -36,16 +36,16 @@ from ..models import (
 
 
 @app.route("/api/userSessions", methods=["POST"])
-def api_userSessions() -> Response:
-    inbody = request.get_json()
+async def api_userSessions() -> ResponseReturnValue:
+    inbody = await request.get_json()
     if not isinstance(inbody, dict):
-        return make_response("Bad request", 400)
+        return await make_response("Bad request", 400)
 
     try:
         blob: UserSessionRequest = unpack_typed_json(UserSessionRequest, inbody)
     except TypeError:
         logging.exception("Failed to parse userSessions input")
-        return make_response("Bad request", 400)
+        return await make_response("Bad request", 400)
     else:
         # FIXME actually authenticate, right now we're keeping the token around to be polite --GM
         now = datetime.datetime.utcnow()
@@ -69,7 +69,7 @@ def api_userSessions() -> Response:
             )
         assert blob.sessionCode is not None
 
-        return make_typed_json_response(
+        return await make_typed_json_response(
             UserSessionResponse(
                 created=now,
                 eTag=f"W/\"datetime'{urllib.parse.quote(nowstr)}'\"",

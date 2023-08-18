@@ -3,8 +3,8 @@ from __future__ import annotations
 import logging
 import subprocess
 
-from flask import (
-    Response,
+from quart import (
+    ResponseReturnValue,
     make_response,
 )
 
@@ -48,9 +48,9 @@ for asset_root, asset_list in ASSET_PATHS.items():
     for asset_name in asset_list:
 
         def _f0(urlpath: str, localpath: str) -> None:
-            def _f1() -> Response:
-                with app.open_resource(localpath, "rb") as f:
-                    return make_response(f.read(), 200)
+            async def _f1() -> ResponseReturnValue:
+                async with await app.open_resource(localpath, "rb") as f:
+                    return await make_response(await f.read(), 200)
 
             _f1.__name__ = "path$" + urlpath
             app.route(urlpath)(_f1)
@@ -63,8 +63,8 @@ for asset_root, asset_list in ASSET_PATHS.items():
 
 
 @app.route("/")
-def root() -> Response:
-    resp = make_response(
+async def root() -> ResponseReturnValue:
+    resp = await make_response(
         "<h1>It Works!</h1>",
     )
     resp.mimetype = "text/html"
