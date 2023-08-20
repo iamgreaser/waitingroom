@@ -14,7 +14,7 @@ from quart import (
     request,
 )
 
-from ..base import (
+from waitingroom.base import (
     app,
     compute_reverse_timestamp,
     format_utc_datetime,
@@ -22,7 +22,7 @@ from ..base import (
     is_valid_machine_id,
     make_typed_json_response,
 )
-from ..models import (
+from waitingroom.models import (
     OnlineUserStats,
 )
 

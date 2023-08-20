@@ -22,14 +22,14 @@ from quart import (
     request,
 )
 
-from ..base import (
+from waitingroom.base import (
     app,
     format_utc_datetime,
     make_json_response,
     make_typed_json_response,
     unpack_typed_json,
 )
-from ..models import (
+from waitingroom.models import (
     Friend,
     FriendProfile,
     UserStatus,

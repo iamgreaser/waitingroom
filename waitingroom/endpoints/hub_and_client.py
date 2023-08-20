@@ -21,7 +21,7 @@ from quart import (
     websocket,
 )
 
-from .base import (
+from waitingroom.base import (
     app,
     make_json_response,
     make_typed_json_response,

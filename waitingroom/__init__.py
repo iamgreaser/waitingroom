@@ -10,21 +10,21 @@ from quart import (
     make_response,
 )
 
-from .base import (
+from waitingroom.base import (
     app,
     format_utc_datetime,
     make_json_response,
 )
 
 # Endpoints
-from . import (
+from waitingroom.endpoints import (
     api,
-    hub,
-    install_ServerResponse,
+    hub_and_client,
+    install,
 )
 
 # Background tasks
-from . import (
+from waitingroom import (
     tasks,
 )
 

@@ -6,7 +6,7 @@ import datetime
 
 from quart import ResponseReturnValue
 
-from .base import (
+from waitingroom.base import (
     app,
     format_utc_datetime,
     make_json_response,

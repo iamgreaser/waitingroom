@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Dict
 
-from ..base import app
+from waitingroom.base import app
 
 from quart import (
     ResponseReturnValue,
