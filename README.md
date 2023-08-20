@@ -1,4 +1,4 @@
-WARNING THIS THING IS INCOMPLETE. but help would be much appreciated, i can be found on the fediverse here: @GreaseMonkey@misskey.neos.love
+WARNING THIS THING IS INCOMPLETE. but help would be much appreciated, i can be found on the fediverse here: `@GreaseMonkey@misskey.neos.love`
 
 tested on Python 3.11. older versions might not work - if you have 3.8 or later and you want to support your version then you're responsible for maintaining it.
 
