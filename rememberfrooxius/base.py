@@ -21,15 +21,48 @@ from quart import (
     ResponseReturnValue,
     make_response,
 )
-
-# TODO: Find (or make) a Quart websocket binding that actually uses type annotations, because I am already disappointed with this one before I even get the chance to like it --GM
-# from quart_sock import Sock  # type: ignore
-
+from quart_redis import (  # type: ignore
+    RedisHandler,
+    get_redis,
+)
+import redis.asyncio
 
 LOG_TYPECHECKS = False
 
 
 app = Quart(__name__)
+
+# TODO: Get a better config setup working --GM
+app.config["REDIS_URI"] = "redis://localhost:6379"
+
+# /api/stats/instanceOnline/{machineid} is polled every 60 seconds by the Neos client.
+#
+app.config["INSTANCEONLINE_LIFETIME_SECONDS"] = (60.0 * 2) + 20.0
+app.config["INSTANCEONLINE_FLUSH_PERIOD_SECONDS"] = 20.0
+
+redis_handler = RedisHandler(app)
+
+
+def get_redis_typed() -> redis.asyncio.Redis[Any]:
+    r: Any
+    r = get_redis()
+    assert isinstance(r, redis.asyncio.Redis)
+    return r
+
+
+machine_id_values = set(
+    "abcdefghijklmnopqrstuvwxyz" + "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + "0123456789" + "-_",
+)
+
+machine_id_values_final = set("agqw")
+
+
+def is_valid_machine_id(machine_id: str) -> bool:
+    return (
+        len(machine_id) == 22
+        and all(map(lambda x: x in machine_id_values, machine_id[:-1]))
+        and machine_id[-1] in machine_id_values_final
+    )
 
 
 async def make_json_response(body: Any) -> ResponseReturnValue:
